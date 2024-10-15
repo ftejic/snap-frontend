@@ -1,10 +1,8 @@
-
-
 function App() {
   return (
-    <>
+    <div>
       Snap
-    </>
+    </div>
   )
 }
 
