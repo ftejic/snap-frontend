@@ -15,11 +15,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/context/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { Role } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeClosed } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -28,6 +31,10 @@ const formSchema = z.object({
 });
 
 function LoginPage() {
+  const { login, loading, user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -38,9 +45,28 @@ function LoginPage() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    const { email, password } = values;
+    const success = await login(email, password);
+
+    if (!success) {
+      toast({
+        variant: "destructive",
+        description: "Login failed. Please check your credentials.",
+      });
+    }
   };
+
+  useEffect(() => {
+    if (user) {
+      if (user.role === Role.Courier) {
+        navigate("/courierPage");
+      }
+      if (user.role === Role.Admin) {
+        navigate("/adminPage");
+      }
+    }
+  }, [user, navigate]);
 
   return (
     <div className="w-full min-h-svh grid lg:grid-cols-2">
@@ -116,8 +142,8 @@ function LoginPage() {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full">
-                    Login
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? "Please wait" : "Login"}
                   </Button>
                 </form>
               </Form>
@@ -125,8 +151,7 @@ function LoginPage() {
           </Card>
         </div>
       </div>
-      <div className="hidden bg-accent lg:block bg-[url('/images/courierPrimary.png')] bg-no-repeat bg-contain bg-bottom">
-      </div>
+      <div className="hidden bg-accent lg:block bg-[url('/images/courierPrimary.png')] bg-no-repeat bg-contain bg-bottom"></div>
     </div>
   );
 }
